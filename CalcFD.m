@@ -1,4 +1,4 @@
-function [DFD, IFD] = CalcFD(agents)
+function [DFD, IFD, IFDS] = CalcFD(agents)
 
 %% Calculate DFD
 maxDFD = 1-1/size(agents, 2); %This is the maxmial value DFD can take.

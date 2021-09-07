@@ -90,6 +90,6 @@ end
 figure
 surf(DFD, IFD, meansn)
 title('Performance Plot')
-xlabel('Dominant Functioanl Diversity')
+xlabel('Dominant Functional Diversity')
 ylabel('Average Individual Functional Diversity')
 zlabel('Average Time of Completion [steps]')
