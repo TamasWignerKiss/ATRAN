@@ -30,16 +30,16 @@ par.anorm = 10; %Total skill of agents
 par.tnorm = 10; %Total labour requirement of tasks
 
 % Internal simulation control
-par.maxPass = 8; %Each task can be passed this many times
-par.similThresh = 80; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
+par.maxPass = Inf; %Each task can be passed this many times
+par.similThresh = 50; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
 
 % External simulation control
 par.numrepeats = 10;
 par.EmergencyStop = 5e2;
 
 %% Some initialization
-adivvals = logspace(-1, 3, 20);
-gdivvals = logspace(-1, 3, 10);
+adivvals = 10.^(linspace(0.1, 0.2, 20).*(linspace(-6, 7, 20)));
+gdivvals = 10.^(0.2*linspace(-3, 5, 10));
 DFD = NaN(20,10);
 IFD = NaN(20,10);
 minsn = NaN(20, 10);
