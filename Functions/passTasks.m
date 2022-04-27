@@ -14,7 +14,7 @@ for tidx = 1:noTasks
         
         %Who is similar enough to be worthy for communication? -- asked the agent working to task tidx?
         %simAgs = find(pdist2(agents(t2a(tidx), :), agents) < simTh);
-        simAgs = find(sqrt(sum((agents - agents(t2a(1), :)).^2, 2)) < simTh); %This is more efficient
+        simAgs = find(sqrt(sum((agents - agents(t2a(tidx), :)).^2, 2)) < simTh); %This is more efficient
         
         %Which are the free similar agents?
         freeAgs = simAgs(not(ismember(simAgs, t2a)));

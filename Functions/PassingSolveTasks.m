@@ -18,7 +18,7 @@ maxDist = max(pdist(agents)); %The maximum distance among agents. Used to calcul
 t2a = randperm(size(agents,1), size(tasks,1));
 
 % Iterate until there are tasks or emergeny stop reached
-while size(tasks,1) > 0 && stepNo <= etc.emStop
+while size(tasks,1) > 0 && stepNo < etc.emStop
         
     %Tasked agents check other agents they are willing to talk to, and pass their task if other is better and free
     [t2a, numPass] = passTasks(t2a, agents, tasks, maxDist*etc.similThresh/100, numPass);

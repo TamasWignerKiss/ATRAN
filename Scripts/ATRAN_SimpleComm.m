@@ -21,10 +21,13 @@
 % allow for only 1 pass. I'll try that too.
 
 %% Parameters
+% IO
+par.functiondir = '/home/umat/bognor/ATRAN/Functions';
+
 % Basic setup parameters
 par.numfuncs = 9; %Number of domain functions
-par.numagents = 100; %Number of agents in the system
-par.numtasks = 10; %Number of tasks injected
+par.numagents = 10; %Number of agents in the system
+par.numtasks = 5; %Number of tasks injected
 par.agspread = 10; %A parameter specifying a meta-spread in agent similarity (could possibly be eliminated)
 par.anorm = 10; %Total skill of agents
 par.tnorm = 10; %Total labour requirement of tasks
@@ -34,8 +37,20 @@ par.maxPass = Inf; %Each task can be passed this many times
 par.similThresh = 50; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
 
 % External simulation control
-par.numrepeats = 10;
-par.EmergencyStop = 5e2;
+par.numrepeats = 50;
+par.EmergencyStop = 2.5e2;
+
+% Etc
+par.debug = 0;
+
+%% Set the path
+warning('off', 'MATLAB:rmpath:DirNotFound')
+restoredefaultpath;
+rmpath('/home/umat/Documents/MATLAB')
+clear RESTOREDEFAULTPATH_EXECUTED
+addpath(par.functiondir)
+rehash
+warning('on', 'MATLAB:rmpath:DirNotFound')
 
 %% Some initialization
 adivvals = 10.^(linspace(0.1, 0.2, 20).*(linspace(-6, 7, 20)));
@@ -55,12 +70,24 @@ T = 0;
 ai = 1;
 for adiv = adivvals
     gi = 1;
-    fprintf('%i ', ai)
+    if par.debug == 0
+        fprintf('%i ', ai)
+    end
     for gdiv = gdivvals
         %Generate agents
         agents = GenAgent(par.numfuncs, par.numagents, [adiv, par.agspread], exp((-(0:par.numfuncs-1).^2)/gdiv), par.anorm);
+        if par.debug > 1
+            figure('WindowStyle','docked', 'Name','Agents')
+            bar(agents, 'stacked')
+            xlabel('Agent''s index')
+            ylabel('Skills')
+        end
+
         %Calculate and store diversity values
         [DFD(ai, gi), IFD(ai, gi)] = CalcFD(agents);
+        if par.debug > 0
+            fprintf('DFD: %0.4f, IFD: %0.4f\n', DFD(ai, gi), IFD(ai, gi))
+        end
         
         %Run some repetitions of task solving with the same parameters
         sn = NaN(par.numrepeats, 1);
@@ -73,7 +100,9 @@ for adiv = adivvals
         maxsn(ai, gi) = max(sn);
         meansn(ai, gi) = mean(sn);
         gi = gi + 1;
-        fprintf('.')
+        if par.debug == 0
+            fprintf('.')
+        end
     end
     T_old = T;
     T = toc;
