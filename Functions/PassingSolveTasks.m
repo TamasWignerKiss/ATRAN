@@ -1,4 +1,4 @@
-function stepNo = PassingSolveTasks(agents, tasks, etc)
+function [stepNo, t2a, taskhist] = PassingSolveTasks(agents, tasks, etc)
 % Input arguments:
 % agents: is the agents matrix
 % tasks: is the task matrix
@@ -15,25 +15,35 @@ maxDist = max(pdist(agents)); %The maximum distance among agents. Used to calcul
 %% Solving the tasks
 
 %Assign tasks to agents
-t2a = randperm(size(agents,1), size(tasks,1));
+t2a = NaN(etc.emStop+1, size(tasks, 1));
+t2a(1, :) = randperm(size(agents,1), size(tasks,1));
+
+%This variable will store task history
+taskhist = NaN(size(tasks, 1), size(tasks, 2), etc.emStop+1);
+taskhist(:, :, 1) = tasks;
 
 % Iterate until there are tasks or emergeny stop reached
-while size(tasks,1) > 0 && stepNo < etc.emStop
-        
-    %Tasked agents check other agents they are willing to talk to, and pass their task if other is better and free
-    [t2a, numPass] = passTasks(t2a, agents, tasks, maxDist*etc.similThresh/100, numPass);
+while all(not(isnan(t2a(stepNo+1, :)))) && stepNo < etc.emStop
     
-    %Agents work on tasks
-    tasks = tasks - agents(t2a,:);
+    %Tasked agents check other agents they are willing to talk to, and pass their task if other is better and free
+    [t2a(stepNo+2, :), numPass] = passTasks(t2a(stepNo + 1, :), agents, tasks, maxDist*etc.similThresh/100, numPass);
+    
+    %Agents work on tasks, mark by NaN if a component is completed
+    tasks = tasks - agents(t2a(stepNo+2, :),:);
+    tasks(tasks <= 0) = NaN;
     
     %Find finished tasks
-    isFinished = all(tasks <= 0, 2);
-    %Erase task
-    tasks(isFinished, :) = [];
-    %Free agent
-    t2a(isFinished) = [];
+    isFinished = all(isnan(tasks), 2);
 
+    %Free agent
+    t2a(stepNo+2, isFinished) = NaN;
+
+    %Store current tasks
+    taskhist(:, :, stepNo + 2) = tasks;
     
     %Increase step counter
     stepNo = stepNo + 1;
 end
+
+% No work was done using the initial task assignment, only passing happened
+t2a = t2a(2:end, :);

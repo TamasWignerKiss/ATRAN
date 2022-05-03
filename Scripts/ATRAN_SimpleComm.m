@@ -34,10 +34,10 @@ par.tnorm = 10; %Total labour requirement of tasks
 
 % Internal simulation control
 par.maxPass = Inf; %Each task can be passed this many times
-par.similThresh = 50; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
+par.similThresh = Inf; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
 
 % External simulation control
-par.numrepeats = 50;
+par.numrepeats = 100;
 par.EmergencyStop = 2.5e2;
 
 % Etc
@@ -77,10 +77,7 @@ for adiv = adivvals
         %Generate agents
         agents = GenAgent(par.numfuncs, par.numagents, [adiv, par.agspread], exp((-(0:par.numfuncs-1).^2)/gdiv), par.anorm);
         if par.debug > 1
-            figure('WindowStyle','docked', 'Name','Agents')
-            bar(agents, 'stacked')
-            xlabel('Agent''s index')
-            ylabel('Skills')
+            PlotAgents(agents);
         end
 
         %Calculate and store diversity values
@@ -91,11 +88,23 @@ for adiv = adivvals
         
         %Run some repetitions of task solving with the same parameters
         sn = NaN(par.numrepeats, 1);
-        for ridx = 1:par.numrepeats
+        %This t2a will not survive an (adiv,gdiv) grid point. Can be used within a point for debuggning
+        t2a = NaN(par.EmergencyStop, par.numtasks, par.numrepeats);
+        %Similarly for the task history
+        taskhists = NaN(par.numtasks, par.numfuncs, par.EmergencyStop+1, par.numrepeats);
+        parfor ridx = 1:par.numrepeats
             %Generate tasks
-            tasks = GenTask(par.numfuncs, par.numtasks, par.tnorm);
-            sn(ridx) = PassingSolveTasks(agents, tasks, etc); %This returns number of steps required to solve all tasks
+            tasks = GenTask(par.numfuncs, par.numtasks, par.tnorm); %#ok<PFBNS> 
+            [sn(ridx), t2a(:, :, ridx), taskhists(:, :, :, ridx)] = PassingSolveTasks(agents, tasks, etc); %This returns number of steps required to solve all tasks
         end
+        if par.debug > 5
+            % An example to plot how task assignment evolved in repeat repeatNum
+            repeatNum = 20;
+            taskNum = 3;
+            PlotRepeatEvents(repeatNum, taskNum, t2a, taskhists, par);
+            clear repeatNum taskNum
+        end
+
         minsn(ai, gi) = min(sn);
         maxsn(ai, gi) = max(sn);
         meansn(ai, gi) = mean(sn);
