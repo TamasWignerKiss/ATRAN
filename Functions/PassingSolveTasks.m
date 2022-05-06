@@ -30,13 +30,17 @@ taskhist = NaN(size(tasks, 1), size(tasks, 2), etc.emStop+1);
 taskhist(:, :, 1) = tasks;
 
 % Iterate until there are tasks or emergeny stop reached
-while all(not(isnan(t2a(stepNo+1, :)))) && stepNo < etc.emStop
+while any(not(isnan(t2a(stepNo+1, :)))) && stepNo < etc.emStop
     
     %Tasked agents check other agents they are willing to talk to, and pass their task if other is better and free
     [t2a(stepNo+2, :), numPass] = passTasks(t2a(stepNo + 1, :), agents, tasks, maxDist*etc.similThresh/100, numPass);
     
     %Agents work on tasks, mark by NaN if a component is completed
-    tasks = tasks - agents(t2a(stepNo+2, :),:);
+    %Need to find busy agents and active tasks because NaN t2a cannot be used for index
+    ActiveTaskIdx = not(all(isnan(tasks), 2));
+    BusyAgentIdx = not(isnan(t2a(stepNo+2, :)));
+    tasks(ActiveTaskIdx, :) = tasks(ActiveTaskIdx, :) - agents(t2a(stepNo+2, BusyAgentIdx), :);
+
     tasks(tasks <= 0) = NaN;
     
     %Find finished tasks

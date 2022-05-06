@@ -32,10 +32,12 @@ par.agspread = 10; %A parameter specifying a meta-spread in agent similarity (co
 par.anorm = 10; %Total skill of agents
 par.tnorm = 10; %Total labour requirement of tasks
 par.TaskType = 2; %Sets what type of task to generate. See help GenTask
+par.noavals = 20; %Number of agent diversity steps
+par.nogvals = 10; %Number of group diversity steps
 
 % Internal simulation control
 par.maxPass = Inf; %Each task can be passed this many times
-par.similThresh = 80; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
+par.similThresh = Inf; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
 
 % External simulation control
 par.numrepeats = 100;
@@ -54,13 +56,14 @@ rehash
 warning('on', 'MATLAB:rmpath:DirNotFound')
 
 %% Some initialization
-adivvals = 10.^(linspace(0.1, 0.2, 20).*(linspace(-6, 7, 20)));
-gdivvals = 10.^(0.2*linspace(-3, 5, 10));
-DFD = NaN(20,10);
-IFD = NaN(20,10);
-minsn = NaN(20, 10);
-maxsn = NaN(20, 10);
-meansn = NaN(20, 10);
+adivvals = 10.^(linspace(0.1, 0.2, par.noavals).*(linspace(-6, 7, par.noavals)));
+gdivvals = 10.^(0.2*linspace(-3, 5, par.nogvals));
+DFD = NaN(par.noavals, par.nogvals);
+IFD = NaN(par.noavals, par.nogvals);
+minsn = NaN(par.noavals, par.nogvals);
+maxsn = NaN(par.noavals, par.nogvals);
+meansn = NaN(par.noavals, par.nogvals);
+stdsn = NaN(par.noavals, par.nogvals);
 etc.maxPass = par.maxPass;
 etc.similThresh = par.similThresh;
 etc.emStop = par.EmergencyStop;
@@ -100,8 +103,8 @@ for adiv = adivvals
         end
         if par.debug > 5
             % An example to plot how task assignment evolved in repeat repeatNum
-            repeatNum = 20;
-            taskNum = 3;
+            repeatNum = 1;
+            taskNum = 2;
             PlotRepeatEvents(repeatNum, taskNum, t2a, taskhists, par);
             clear repeatNum taskNum
         end
@@ -109,6 +112,7 @@ for adiv = adivvals
         minsn(ai, gi) = min(sn);
         maxsn(ai, gi) = max(sn);
         meansn(ai, gi) = mean(sn);
+        stdsn(ai, gi) = std(sn);
         gi = gi + 1;
         if par.debug == 0
             fprintf('.')
@@ -122,9 +126,29 @@ end
 toc
 
 %% Plot what we got :-)
+
+[tmpDFD, sI] = sort(DFD, 2);
+tmpIFD = NaN(size(IFD));
+tmpMsn = NaN(size(meansn));
+tmpSsn = NaN(size(stdsn));
+for idx = 1:size(DFD, 1)
+    tmpIFD(idx,:) = IFD(idx, sI(idx, :));
+    tmpMsn(idx,:) = meansn(idx, sI(idx, :));
+    tmpSsn(idx,:) = stdsn(idx, sI(idx, :));
+end
+
 figure
-surf(DFD, IFD, meansn)
-title(['Performance Plot | Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '%'])
+surf(tmpDFD, tmpIFD, meansn)
+title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
+    num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
 xlabel('Dominant Functional Diversity')
-ylabel('Average Individual Functional Diversity')
+ylabel('Individual Functional Diversity')
 zlabel('Average Time of Completion [steps]')
+
+figure
+surf(tmpDFD, tmpIFD, stdsn)
+title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
+    num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
+xlabel('Dominant Functional Diversity')
+ylabel('Individual Functional Diversity')
+zlabel('Std of Time of Completion [steps]')
