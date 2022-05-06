@@ -1,6 +1,7 @@
 function fh = PlotRepeatEvents(rn, tn, t2a, th, par)
-%PlotRepeatEvents is a helper function to see how task passing and task subfunctions changed during a given instance of the simulation
+%PlotRepeatEvents is a helper function to help see how task passing and task subfunctions changed during a given instance of the simulation.
 
+%% Plot evolution of task assigment and task functions
 fh = figure;
 ax1 = subplot(2,1,1);
 plot(t2a(:,:, rn), '.-');

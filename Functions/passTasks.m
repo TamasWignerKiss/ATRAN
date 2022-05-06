@@ -1,4 +1,10 @@
 function [t2a, numPass] = passTasks(t2a, agents, tasks, simTh, numPass)
+%This function performs reorganization of which agent works on which task
+%
+%Usage: [Task2Agent, NumberOfPasses] = pasTasks(Task2Agent, Agents, Tasks, SimilarityThreshold, NumberOfPasses)
+%
+
+%% Perform pass calculation
 
 % For each active task evaluate if the agent working on it should pass it or keep it
 for tidx = find(not(isnan(t2a)))
@@ -14,12 +20,11 @@ for tidx = find(not(isnan(t2a)))
         freeAgs = simAgs(not(ismember(simAgs, t2a)));
         
         %How good am I to solve my task?
-        %myFit = pdist2(agents(t2a(tidx), :), tasks(tidx,:));
-        myFit = sqrt(nansum((agents(t2a(tidx), :) - tasks(tidx,:)).^2)); %#ok<NANSUM> %Again, this is more than 10x faster
-        
+        myFit = CalcSolvFitness(agents(t2a(tidx), :), tasks(tidx, :));
+                
         %How good are free agents I talk to?
-        theirFit = sqrt(nansum((agents(freeAgs, :) - tasks(tidx, :)).^2, 2)); %#ok<NANSUM> 
-        
+        theirFit = CalcSolvFitness(agents(freeAgs, :), tasks(tidx, :));
+                
         %Who's best?
         [~, bestidx] = min([myFit; theirFit]);
         

@@ -31,10 +31,11 @@ par.numtasks = 5; %Number of tasks injected
 par.agspread = 10; %A parameter specifying a meta-spread in agent similarity (could possibly be eliminated)
 par.anorm = 10; %Total skill of agents
 par.tnorm = 10; %Total labour requirement of tasks
+par.TaskType = 2; %Sets what type of task to generate. See help GenTask
 
 % Internal simulation control
 par.maxPass = Inf; %Each task can be passed this many times
-par.similThresh = Inf; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
+par.similThresh = 80; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
 
 % External simulation control
 par.numrepeats = 100;
@@ -94,7 +95,7 @@ for adiv = adivvals
         taskhists = NaN(par.numtasks, par.numfuncs, par.EmergencyStop+1, par.numrepeats);
         parfor ridx = 1:par.numrepeats
             %Generate tasks
-            tasks = GenTask(par.numfuncs, par.numtasks, par.tnorm); %#ok<PFBNS> 
+            tasks = GenTask(par.numfuncs, par.numtasks, par.tnorm, par.EmergencyStop, par.TaskType, agents); %#ok<PFBNS> 
             [sn(ridx), t2a(:, :, ridx), taskhists(:, :, :, ridx)] = PassingSolveTasks(agents, tasks, etc); %This returns number of steps required to solve all tasks
         end
         if par.debug > 5

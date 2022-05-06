@@ -1,11 +1,18 @@
 function [stepNo, t2a, taskhist] = PassingSolveTasks(agents, tasks, etc)
+%This function runs an instance of the simulation. In this version the simulation runs until the maximal number of steps is reached or all tasks are
+%solved. The following processes are performed:
+%1. Randomly assign tasks to agents (also, keep track of the assignment across stimulation steps)
+%2. Figure out is another free agent is better in solving a task and if so, pass the task
+%3. Agents work on the task
+%4. Go to step 2.
+%
 % Input arguments:
 % agents: is the agents matrix
 % tasks: is the task matrix
-% etc: other parameters
-%  emStop: a number that specifies the maximum number of steps allowed (to stop simulation in case the system gets stuck)
-%  maxPass: maximum number of allowable passes
-%  similThresh: a threshold of similarity (percent of max) above which agents don't pass
+% etc: other parameters, a struct containing:
+%   emStop: a number that specifies the maximum number of steps allowed (to stop simulation in case the system gets stuck)
+%   maxPass: maximum number of allowable passes
+%   similThresh: a threshold of similarity (percent of max) above which agents don't pass
 
 %% Some initialization
 stepNo = 0; %Counter to track number of simulation steps needed to solve all tasks
