@@ -24,24 +24,28 @@
 % IO
 par.functiondir = '/home/umat/bognor/ATRAN/Functions';
 
-% Basic setup parameters
+% Simulation parameters
 par.numfuncs = 9; %Number of domain functions
 par.numagents = 10; %Number of agents in the system
 par.numtasks = 5; %Number of tasks injected
 par.agspread = 10; %A parameter specifying a meta-spread in agent similarity (could possibly be eliminated)
-par.anorm = 10; %Total skill of agents
-par.tnorm = 10; %Total labour requirement of tasks
+par.anorm = 10; %Total skill of agents (agent normalizing factor)
+par.tnorm = 10; %Total labour requirement of tasks (task normalizing factor)
 par.TaskType = 2; %Sets what type of task to generate. See help GenTask
-par.noavals = 20; %Number of agent diversity steps
-par.nogvals = 10; %Number of group diversity steps
+par.noavals = 40; %Number of agent diversity steps
+par.nogvals = 40; %Number of group diversity steps
 
-% Internal simulation control
+% Internal simulation control parameters
 par.maxPass = Inf; %Each task can be passed this many times
 par.similThresh = 80; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
 
-% External simulation control
-par.numrepeats = 100;
+% External simulation control parameters
+par.numrepeats = 10;
 par.EmergencyStop = 2.5e2;
+
+% Plotting
+par.IFDbins = linspace(0, 1, 11); %For coarse-graining the values calculated
+par.DFDbins = linspace(0, 1, 11);
 
 % Etc
 par.debug = 0;
@@ -162,51 +166,76 @@ for adiv = adivvals
 end
 toc
 
+% Interim cleanup
+clear adiv agents ai gdiv gi sn stn T t2a T_old taskhists
+
+%% Coarse-grain (average in bins) results
+cgmstn = NaN(length(par.IFDbins)-1, length(par.DFDbins)-1);
+cgmsn = NaN(size(cgmstn));
+cgIFD = NaN(size(cgmstn));
+cgDFD = NaN(size(cgmstn));
+for iidx = 1:length(par.IFDbins)-1
+    for didx = 1:length(par.DFDbins)-1
+        cgmstn(iidx, didx) = mean(meanstn(par.IFDbins(iidx)<=IFD & IFD<par.IFDbins(iidx+1) & par.DFDbins(didx)<=DFD & DFD<par.DFDbins(didx+1)));
+        cgmsn(iidx, didx) = mean(meansn(par.IFDbins(iidx)<=IFD & IFD<par.IFDbins(iidx+1) & par.DFDbins(didx)<=DFD & DFD<par.DFDbins(didx+1)));
+        cgIFD(iidx, didx) = par.IFDbins(iidx);
+        cgDFD(iidx, didx) = par.DFDbins(didx);
+    end
+end
+
+% Interim cleanup
+clear iidx didx
+
 %% Plot what we've got :-)
 
 %Due to the way agents are generated, DFD and IFD values are not sorted. Sorting them here.
-[tmpDFD, sI] = sort(DFD, 2);
-tmpIFD = NaN(size(IFD));
-tmpMsn = NaN(size(meansn));
-tmpSsn = NaN(size(stdsn));
-for idx = 1:size(DFD, 1)
-    tmpIFD(idx,:) = IFD(idx, sI(idx, :));
-    tmpMsn(idx,:) = meansn(idx, sI(idx, :));
-    tmpSsn(idx,:) = stdsn(idx, sI(idx, :));
-end
+% [tmpDFD, sI] = sort(DFD, 2);
+% tmpIFD = NaN(size(IFD));
+% tmpMsn = NaN(size(meansn));
+% tmpSsn = NaN(size(stdsn));
+% for idx = 1:size(DFD, 1)
+%     tmpIFD(idx,:) = IFD(idx, sI(idx, :));
+%     tmpMsn(idx,:) = meansn(idx, sI(idx, :));
+%     tmpSsn(idx,:) = stdsn(idx, sI(idx, :));
+% end
 
 %Time required to complete all tasks
 %Mean
 figure
-surf(tmpDFD, tmpIFD, meansn)
+%surf(tmpDFD, tmpIFD, meansn)
+surf(cgDFD, cgIFD, cgmsn)
 title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
     num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
 xlabel('Dominant Functional Diversity')
 ylabel('Individual Functional Diversity')
 zlabel('Average Time of Completion [steps]')
 %Std
-figure
-surf(tmpDFD, tmpIFD, stdsn)
-title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
-    num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
-xlabel('Dominant Functional Diversity')
-ylabel('Individual Functional Diversity')
-zlabel('Std of Time of Completion [steps]')
+% figure
+% surf(tmpDFD, tmpIFD, stdsn)
+% title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
+%     num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
+% xlabel('Dominant Functional Diversity')
+% ylabel('Individual Functional Diversity')
+% zlabel('Std of Time of Completion [steps]')
 
 %Amount of work done
 %Mean
 figure
-surf(tmpDFD, tmpIFD, meanstn)
+%surf(tmpDFD, tmpIFD, meanstn)
+surf(cgDFD, cgIFD, cgmstn)
 title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
     num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
 xlabel('Dominant Functional Diversity')
 ylabel('Individual Functional Diversity')
 zlabel('Average Solved Subtasks')
 %Std
-figure
-surf(tmpDFD, tmpIFD, stdstn)
-title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
-    num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
-xlabel('Dominant Functional Diversity')
-ylabel('Individual Functional Diversity')
-zlabel('Std of Solved Subtasks')
+% figure
+% surf(tmpDFD, tmpIFD, stdstn)
+% title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
+%     num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
+% xlabel('Dominant Functional Diversity')
+% ylabel('Individual Functional Diversity')
+% zlabel('Std of Solved Subtasks')
+
+% Interim cleanup
+clear idx tmp*
