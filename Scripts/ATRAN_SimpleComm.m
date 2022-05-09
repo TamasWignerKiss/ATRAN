@@ -37,7 +37,7 @@ par.nogvals = 10; %Number of group diversity steps
 
 % Internal simulation control
 par.maxPass = Inf; %Each task can be passed this many times
-par.similThresh = Inf; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
+par.similThresh = 80; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
 
 % External simulation control
 par.numrepeats = 100;
@@ -64,6 +64,10 @@ minsn = NaN(par.noavals, par.nogvals);
 maxsn = NaN(par.noavals, par.nogvals);
 meansn = NaN(par.noavals, par.nogvals);
 stdsn = NaN(par.noavals, par.nogvals);
+minstn = NaN(par.noavals, par.nogvals);
+maxstn = NaN(par.noavals, par.nogvals);
+meanstn = NaN(par.noavals, par.nogvals);
+stdstn = NaN(par.noavals, par.nogvals);
 etc.maxPass = par.maxPass;
 etc.similThresh = par.similThresh;
 etc.emStop = par.EmergencyStop;
@@ -78,10 +82,11 @@ for adiv = adivvals
         fprintf('%i ', ai)
     end
     for gdiv = gdivvals
+        
         %Generate agents
         agents = GenAgent(par.numfuncs, par.numagents, [adiv, par.agspread], exp((-(0:par.numfuncs-1).^2)/gdiv), par.anorm);
         if par.debug > 1
-            PlotAgents(agents);
+            PlotAgents(agents); %This is how you can visualize agents
         end
 
         %Calculate and store diversity values
@@ -90,34 +95,66 @@ for adiv = adivvals
             fprintf('DFD: %0.4f, IFD: %0.4f\n', DFD(ai, gi), IFD(ai, gi))
         end
         
-        %Run some repetitions of task solving with the same parameters
-        sn = NaN(par.numrepeats, 1);
-        %This t2a will not survive an (adiv,gdiv) grid point. Can be used within a point for debuggning
-        t2a = NaN(par.EmergencyStop, par.numtasks, par.numrepeats);
-        %Similarly for the task history
-        taskhists = NaN(par.numtasks, par.numfuncs, par.EmergencyStop+1, par.numrepeats);
+        %The following variables will only live for an [ai, gi] point
+        sn = NaN(par.numrepeats, 1); %Initialize number of steps nedded to solve all tasks
+        t2a = NaN(par.EmergencyStop, par.numtasks, par.numrepeats); %Initialize variable keeping track of which agent works on which task
+        taskhists = NaN(par.numtasks, par.numfuncs, par.EmergencyStop+1, par.numrepeats); %Initialize variable keeping track of how tasks progress
+        stn = zeros(par.numrepeats, 1); %Initialize variable storing the amount of work done in repeats
+
+        %The following piece of code runs in parallel on multiple cores. Remove "par" to allow debugging of the inside.
         parfor ridx = 1:par.numrepeats
+            
             %Generate tasks
             tasks = GenTask(par.numfuncs, par.numtasks, par.tnorm, par.EmergencyStop, par.TaskType, agents); %#ok<PFBNS> 
-            [sn(ridx), t2a(:, :, ridx), taskhists(:, :, :, ridx)] = PassingSolveTasks(agents, tasks, etc); %This returns number of steps required to solve all tasks
+
+            %PassingSolveTasks is the function that runs the while loop running the whole game of passing-working
+            [t2a(:, :, ridx), tmpth] = PassingSolveTasks(agents, tasks, etc); %This returns number of steps required to solve all tasks
+            taskhists(:, :, :, ridx) = tmpth; %This is technically needed for the parallel machine
+
+            % Calculate steps taken to solve all tasks
+            tmp = find(all(isnan(t2a(:, :, ridx)), 2), 1, 'first')';
+            if isempty(tmp)
+                sn(ridx) = par.EmergencyStop;
+            else
+                sn(ridx) = tmp;
+            end
+
+            % Calculate the amount of solved sub-tasks
+            tmp1 = tmpth(:, :, 1);
+            tmp2 = tmpth(:, :, 251);
+            tmp1(isnan(tmp1)) = 0; %There can be NaNs initially due to sub-tasks that the system cannot solve!
+            tmp2(isnan(tmp2)) = 0;
+            stn(ridx) = sum(sum(tmp1 - tmp2));
         end
+
+        % An example to plot how task assignment evolved in repeat repeatNum, and Task # taskNum
         if par.debug > 5
-            % An example to plot how task assignment evolved in repeat repeatNum
             repeatNum = 1;
             taskNum = 2;
             PlotRepeatEvents(repeatNum, taskNum, t2a, taskhists, par);
             clear repeatNum taskNum
         end
-
+        
+        % Average steps
         minsn(ai, gi) = min(sn);
         maxsn(ai, gi) = max(sn);
         meansn(ai, gi) = mean(sn);
         stdsn(ai, gi) = std(sn);
+
+        % Average solved subtasks
+        minstn(ai, gi) = min(stn);
+        maxstn(ai, gi) = max(stn);
+        meanstn(ai, gi) = mean(stn);
+        stdstn(ai, gi) = std(stn);
+
+        % Step counter
         gi = gi + 1;
         if par.debug == 0
             fprintf('.')
         end
     end
+
+    % Step counter
     T_old = T;
     T = toc;
     fprintf(' (%0.2f sec)\n', T-T_old)
@@ -125,8 +162,9 @@ for adiv = adivvals
 end
 toc
 
-%% Plot what we got :-)
+%% Plot what we've got :-)
 
+%Due to the way agents are generated, DFD and IFD values are not sorted. Sorting them here.
 [tmpDFD, sI] = sort(DFD, 2);
 tmpIFD = NaN(size(IFD));
 tmpMsn = NaN(size(meansn));
@@ -137,6 +175,8 @@ for idx = 1:size(DFD, 1)
     tmpSsn(idx,:) = stdsn(idx, sI(idx, :));
 end
 
+%Time required to complete all tasks
+%Mean
 figure
 surf(tmpDFD, tmpIFD, meansn)
 title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
@@ -144,7 +184,7 @@ title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThres
 xlabel('Dominant Functional Diversity')
 ylabel('Individual Functional Diversity')
 zlabel('Average Time of Completion [steps]')
-
+%Std
 figure
 surf(tmpDFD, tmpIFD, stdsn)
 title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
@@ -152,3 +192,21 @@ title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThres
 xlabel('Dominant Functional Diversity')
 ylabel('Individual Functional Diversity')
 zlabel('Std of Time of Completion [steps]')
+
+%Amount of work done
+%Mean
+figure
+surf(tmpDFD, tmpIFD, meanstn)
+title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
+    num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
+xlabel('Dominant Functional Diversity')
+ylabel('Individual Functional Diversity')
+zlabel('Average Solved Subtasks')
+%Std
+figure
+surf(tmpDFD, tmpIFD, stdstn)
+title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
+    num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
+xlabel('Dominant Functional Diversity')
+ylabel('Individual Functional Diversity')
+zlabel('Std of Solved Subtasks')

@@ -1,4 +1,4 @@
-function [stepNo, t2a, taskhist] = PassingSolveTasks(agents, tasks, etc)
+function [t2a, taskhist] = PassingSolveTasks(agents, tasks, etc)
 %This function runs an instance of the simulation. In this version the simulation runs until the maximal number of steps is reached or all tasks are
 %solved. The following processes are performed:
 %1. Randomly assign tasks to agents (also, keep track of the assignment across stimulation steps)
