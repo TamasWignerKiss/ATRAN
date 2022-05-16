@@ -14,6 +14,9 @@ DFD = DFD/maxDFD; %This is the normalization they mention on page 885 below the 
 %% Calculate IFD
 % First calculate IFDS
 IFDS = 1 - sum((agents./sum(agents,2)).^2, 2);
+%Normalizing factor
+maxIFD = 1-1/size(agents, 1); %Maximal value IFD can take
+IFDS = IFDS/maxIFD;
 % Second, mean IFDSs across agents to get IFD
 IFD = mean(IFDS);
 
