@@ -114,7 +114,7 @@ for ai = 1:length(adivvals)
 
             % Calculate the amount of solved sub-tasks
             tmp1 = taskhists(:, :, 1, ridx);
-            tmp2 = taskhists(:, :, 251, ridx);
+            tmp2 = taskhists(:, :, par.EmergencyStop+1, ridx);
             tmp1(isnan(tmp1)) = 0; %There can be NaNs initially due to sub-tasks that the system cannot solve!
             tmp2(isnan(tmp2)) = 0;
             stn(ridx) = sum(sum(tmp1 - tmp2));
@@ -145,7 +145,7 @@ toc
 % Interim cleanup
 clear adiv agents ai gdiv gi sn stn T t2a T_old taskhists
 
-%% Coarse-grain (average in bins) results
+%% Coarse-grain (average in bins) results and normalize max of amount of solved subtasks to 1
 cgmstn = NaN(length(par.IFDbins)-1, length(par.DFDbins)-1);
 cgmsn = NaN(size(cgmstn));
 cgIFD = NaN(size(cgmstn));
@@ -153,11 +153,13 @@ cgDFD = NaN(size(cgmstn));
 for iidx = 1:length(par.IFDbins)-1
     for didx = 1:length(par.DFDbins)-1
         cgmstn(iidx, didx) = mean(meanstn(par.IFDbins(iidx)<=IFD & IFD<par.IFDbins(iidx+1) & par.DFDbins(didx)<=DFD & DFD<par.DFDbins(didx+1)));
-        cgmsn(iidx, didx) = mean(meansn(par.IFDbins(iidx)<=IFD & IFD<par.IFDbins(iidx+1) & par.DFDbins(didx)<=DFD & DFD<par.DFDbins(didx+1)));
-        cgIFD(iidx, didx) = par.IFDbins(iidx);
-        cgDFD(iidx, didx) = par.DFDbins(didx);
+        cgmsn(iidx, didx)  = mean(meansn(par.IFDbins(iidx)<=IFD & IFD<par.IFDbins(iidx+1) & par.DFDbins(didx)<=DFD & DFD<par.DFDbins(didx+1)));
+        cgIFD(iidx, didx)  = par.IFDbins(iidx);
+        cgDFD(iidx, didx)  = par.DFDbins(didx);
     end
 end
+
+cgmstn = cgmstn/(par.numtasks*par.tnorm);
 
 % Interim cleanup
 clear iidx didx
