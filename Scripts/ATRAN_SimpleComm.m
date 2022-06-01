@@ -37,7 +37,7 @@ par.nogvals = 40; %Number of group diversity steps
 
 % Internal simulation control parameters
 par.maxPass = Inf; %Each task can be passed this many times
-par.similThresh = 50; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
+par.similThresh = Inf; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
 
 % External simulation control parameters
 par.numrepeats = 10;
@@ -80,11 +80,12 @@ for ai = 1:length(adivvals)
     adiv = adivvals(ai);
     fprintf('%i ', ai)
     
-    parfor gi = 1:length(gdivvals)
+    parfor gi = 1:length(gdivvals) %This is for parallel computing
         gdiv = gdivvals(gi);
 
         %Generate agents
         agents = GenAgent(par.numfuncs, par.numagents, [adiv, par.agspread], exp((-(0:par.numfuncs-1).^2)/gdiv), par.anorm); %#ok<PFBNS> 
+        agdistmat = squareform(pdist(agents));
 
         %Calculate and store diversity values
         [DFD(ai, gi), IFD(ai, gi)] = CalcFD(agents);
@@ -102,7 +103,7 @@ for ai = 1:length(adivvals)
             tasks = GenTask(par.numfuncs, par.numtasks, par.tnorm, par.EmergencyStop, par.TaskType, agents);
 
             %PassingSolveTasks is the function that runs the while loop running the whole game of passing-working
-            [t2a(:, :, ridx), taskhists(:, :, :, ridx)] = PassingSolveTasks(agents, tasks, etc); %This returns number of steps required to solve all tasks
+            [t2a(:, :, ridx), taskhists(:, :, :, ridx)] = PassingSolveTasks(agents, tasks, etc, agdistmat); %This returns number of steps required to solve all tasks
 
             % Calculate steps taken to solve all tasks
             tmp = find(all(isnan(t2a(:, :, ridx)), 2), 1, 'first')';

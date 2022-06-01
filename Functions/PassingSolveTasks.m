@@ -1,4 +1,4 @@
-function [t2a, taskhist] = PassingSolveTasks(agents, tasks, etc)
+function [t2a, taskhist] = PassingSolveTasks(agents, tasks, etc, agdistmat)
 %This function runs an instance of the simulation. In this version the simulation runs until the maximal number of steps is reached or all tasks are
 %solved. The following processes are performed:
 %1. Randomly assign tasks to agents (also, keep track of the assignment across stimulation steps)
@@ -33,7 +33,8 @@ taskhist(:, :, 1) = tasks;
 while any(not(isnan(t2a(stepNo+1, :)))) && stepNo < etc.emStop
     
     %Tasked agents check other agents they are willing to talk to, and pass their task if other is better and free
-    [t2a(stepNo+2, :), numPass] = passTasks(t2a(stepNo + 1, :), agents, tasks, maxDist*etc.similThresh/100, numPass);
+    [t2a(stepNo+2, :), numPass] = passTasks_v2(t2a(stepNo + 1, :), agents, tasks, maxDist*etc.similThresh/100, numPass, agdistmat);
+    %[t2a(stepNo+2, :), numPass] = passTasks(t2a(stepNo + 1, :), agents, tasks, maxDist*etc.similThresh/100, numPass);
     
     %Agents work on tasks, mark by NaN if a component is completed
     %Need to find busy agents and active tasks because NaN t2a cannot be used for index
