@@ -32,8 +32,10 @@ taskhist(:, :, 1) = tasks;
 % Iterate until there are tasks or emergeny stop reached
 while any(not(isnan(t2a(stepNo+1, :)))) && stepNo < etc.emStop
     
-    %Tasked agents check other agents they are willing to talk to, and pass their task if other is better and free
+    %In this version agents can swap tasks: being busy is not evaluated
     [t2a(stepNo+2, :), numPass] = passTasks_v2(t2a(stepNo + 1, :), agents, tasks, maxDist*etc.similThresh/100, numPass, agdistmat);
+    
+    %The below version will not swap tasks: only free agents can receive new tasks
     %[t2a(stepNo+2, :), numPass] = passTasks(t2a(stepNo + 1, :), agents, tasks, maxDist*etc.similThresh/100, numPass);
     
     %Agents work on tasks, mark by NaN if a component is completed

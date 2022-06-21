@@ -31,6 +31,7 @@ switch type
         mas = max(agents); %The fastet solver for a given function
         tmp = tasks - mas*es; %This would be the value of the task after es steps if always the fastet was solving. If positive, cannot be done
         tasks(tmp > 0) = NaN;
+        tasks = tasks./nansum(tasks, 2)*no; %#ok<NANSUM> %Need to normalize again after removing some components
     otherwise
         error('Don know hot to generate these tasks.')
 end

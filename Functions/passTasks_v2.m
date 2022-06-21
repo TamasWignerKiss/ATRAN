@@ -4,7 +4,8 @@ function [t2a, numPass] = passTasks_v2(t2a, agents, tasks, simTh, numPass, agdis
 %were both showing up as busy for the other agent.
 %
 %In the current version all agents that communicate first evaluate which is better in solving a given task. This way for each task a list of agents
-%are assigned. Second, tasks are assigned to agents in order of their fitness.
+%are assigned. Second, tasks are assigned to agents in order of their fitness. If there are tasks that do not have any optional agents, tasks are
+%returned to the central pool and randomly re-assigned to idle agents.
 %
 %Usage: [Task2Agent, NumberOfPasses] = pasTasks(Task2Agent, Agents, Tasks, SimilarityThreshold, NumberOfPasses)
 %
@@ -22,7 +23,7 @@ for tidx = activeTasks
     if numPass(tidx) > 0
 
         %Who is similar enough to be worthy for communication? -- asked the agent working on task tidx?
-        simAgs{tidx} = find(agdistmat(t2a(tidx), :) < simTh);
+        simAgs{tidx} = find(agdistmat(t2a(tidx), :) <= simTh);
 
         %Calculate how good all these friends are in solving task tidx
         agFit{tidx} = CalcSolvFitness(agents(simAgs{tidx}, :), tasks(tidx, :));
