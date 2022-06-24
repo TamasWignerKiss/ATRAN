@@ -37,7 +37,8 @@ par.nogvals = 40; %Number of group diversity steps
 
 % Internal simulation control parameters
 par.maxPass = Inf; %Each task can be passed this many times
-par.similThresh = Inf; %The threshold of similarity (as percentage of maximal distance) above which agents are willing to communicate w/ each other
+par.similThresh = Inf; %The threshold of similarity (as percentage of maximal distance) below which agents are willing to communicate w/ each other
+par.passCost = 0; % Steps, the cost of communication: the receiving agent cannot work until this amount of time stamps
 
 % External simulation control parameters
 par.numrepeats = 10;
@@ -72,6 +73,7 @@ stdstn = NaN(par.noavals, par.nogvals);
 etc.maxPass = par.maxPass;
 etc.similThresh = par.similThresh;
 etc.emStop = par.EmergencyStop;
+etc.passCost = par.passCost; %Steps
 
 %% Loop through DFD and IFD values
 tic
@@ -91,7 +93,7 @@ for ai = 1:length(adivvals)
         [DFD(ai, gi), IFD(ai, gi)] = CalcFD(agents);
         
         %The following variables will only live for an [ai, gi] point
-        t2a = NaN(par.EmergencyStop, par.numtasks, par.numrepeats); %Initialize variable keeping track of which agent works on which task
+        t2a = NaN(par.EmergencyStop+1, par.numtasks, par.numrepeats); %Initialize variable keeping track of which agent works on which task
         taskhists = NaN(par.numtasks, par.numfuncs, par.EmergencyStop+1, par.numrepeats); %Initialize variable keeping track of how tasks progress
         sn = NaN(par.numrepeats, 1); %Initialize number of steps nedded to solve all tasks
         stn = zeros(par.numrepeats, 1); %Initialize variable storing the amount of work done in repeats
@@ -168,11 +170,17 @@ clear iidx didx
 %% Plot amount of work solved vs. IFD, DFD (coarse-grained)
 figure
 surf(cgDFD, cgIFD, cgmstn)
-title(['Simple Task Passing w/ passing limit=' num2str(par.maxPass) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
+title(['Passing cost=' num2str(par.passCost) ' | SimThresh=' num2str(par.similThresh) '% | NoAgs= ' ...
     num2str(par.numagents) ' | NoTasks= ' num2str(par.numtasks) ' | NoRepeats= ' num2str(par.numrepeats)])
 xlabel('Dominant Functional Diversity')
 ylabel('Individual Functional Diversity')
 zlabel('Average Solved Subtasks')
+cbh = colorbar;
+ylabel(cbh, 'Average Solved Subtasks')
+xlim([0 1])
+ylim([0 1])
+zlim([0 1])
+clim([0 1])
 
 %% Cuts
 
